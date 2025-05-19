@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import ProductManagement from '../components/admin/ProductManagement';
 import UserManagement from '../components/admin/UserManagement';
+import OrderManagement from '../components/admin/OrderManagement';
 
 const AdminDashboardPage = () => {
   const { user } = useAuth();
@@ -53,14 +54,7 @@ const AdminDashboardPage = () => {
         <Box sx={{ p: 3 }}>
           {activeTab === 0 && <ProductManagement />}
           {activeTab === 1 && <UserManagement />}
-          {activeTab === 2 && (
-            <Box sx={{ py: 3 }}>
-              <Typography variant="h6">Orders Management</Typography>
-              <Typography variant="body1" color="text.secondary">
-                Order management functionality to be implemented.
-              </Typography>
-            </Box>
-          )}
+          {activeTab === 2 && <OrderManagement />}
         </Box>
       </Paper>
     </Container>

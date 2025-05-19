@@ -16,11 +16,15 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import Loader from '../components/Loader';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:5000/api';
 
 const CheckoutPage = () => {
   const { user } = useAuth();
@@ -41,6 +45,8 @@ const CheckoutPage = () => {
   });
   const [errors, setErrors] = useState({});
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Redirect if not logged in or cart is empty
   if (!user) {
@@ -110,11 +116,49 @@ const CheckoutPage = () => {
     setActiveStep(prev => prev - 1);
   };
 
-  const handleSubmitOrder = () => {
-    // In a real app, you would send an API request to create the order here
-    setOrderPlaced(true);
-    clearCart(user._id);
-    setActiveStep(3); // Success step
+  const handleSubmitOrder = async () => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      const orderData = {
+        orderItems: cartItems.map(item => ({
+          product: item.product,
+          name: item.name,
+          image: item.image,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        shippingAddress: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          address: formData.address,
+          city: formData.city,
+          zipCode: formData.zipCode,
+          country: formData.country
+        },
+        paymentMethod: formData.paymentMethod,
+        totalPrice: totalPrice + (totalPrice * 0.1) // Including tax
+      };
+
+      const { data } = await axios.post(`${API_URL}/orders`, orderData, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (data) {
+        clearCart(user._id);
+        setOrderPlaced(true);
+        setActiveStep(3); // Success step
+      }
+    } catch (error) {
+      console.error('Order placement error:', error);
+      setError(error.response?.data?.message || 'Failed to place order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderShippingForm = () => (
@@ -411,6 +455,12 @@ const CheckoutPage = () => {
           Checkout
         </Typography>
         
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        
         <Stepper activeStep={activeStep} sx={{ mb: 4, display: activeStep < 3 ? 'flex' : 'none' }}>
           {steps.map((label) => (
             <Step key={label}>
@@ -430,6 +480,7 @@ const CheckoutPage = () => {
                 variant="outlined" 
                 onClick={handleBack} 
                 sx={{ mr: 1 }}
+                disabled={isSubmitting}
               >
                 Back
               </Button>
@@ -440,14 +491,17 @@ const CheckoutPage = () => {
                 variant="contained" 
                 color="primary" 
                 onClick={handleSubmitOrder}
+                disabled={isSubmitting}
+                startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
               >
-                Place Order
+                {isSubmitting ? 'Placing Order...' : 'Place Order'}
               </Button>
             ) : (
               <Button 
                 variant="contained" 
                 color="primary" 
                 onClick={handleNext}
+                disabled={isSubmitting}
               >
                 Next
               </Button>

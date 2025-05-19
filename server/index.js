@@ -15,11 +15,13 @@ app.use(express.urlencoded({ extended: true }));
 const productRoutes = require('./routes/products');
 const userRoutes = require('./routes/users');
 const cartRoutes = require('./routes/cart');
+const orderRoutes = require('./routes/orders');
 
 // Use routes
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Default route
 app.get('/', (req, res) => {
